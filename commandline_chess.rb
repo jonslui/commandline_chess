@@ -1,4 +1,4 @@
-class Board
+class Game
     attr_accessor :board, :player_white, :player_black
 
     def initialize
@@ -16,17 +16,18 @@ class Board
         create_peices()        
     end
 
+    # create peices, populate display, and add them to player_white/player_black's "peices" array
     def create_peices
         # target location 0 == row, target_location 1 == columns; it is backwards due to the board
 
         n = 0
         8.times do 
             # change here to add black/white pawn
-            pawn = WhitePawn.new([1, n], "♙", [1, n], self.player_white)
+            pawn = WhitePawn.new([1, n], "♙", self.player_white)
             board[1][n] = pawn
             player_white.peices << pawn
 
-            pawn = BlackPawn.new([6, n], "♟", [6, n], self.player_black)
+            pawn = BlackPawn.new([6, n], "♟", self.player_black)
             board[6][n] = pawn
             player_black.peices << pawn
 
@@ -35,17 +36,33 @@ class Board
         
         n = 1
         2.times do 
-            knight = Knight.new([0, n],"♘", [0, n], self.player_white)
+            knight = Knight.new([0, n],"♘", self.player_white)
             board[0][n] = knight
             player_white.peices << knight
             
-            knight = Knight.new([7, n],"♞", [7, n], self.player_black)
+            knight = Knight.new([7, n],"♞", self.player_black)
             board[7][n] = knight
             player_black.peices << knight
 
             n += 5
         end
-        
+
+        n = 0
+        2.times do
+            rook = Rook.new([0, n], "♖", self.player_white)
+            board[0][n] = rook
+            player_white.peices << rook
+
+            rook = Rook.new([7, n], "♜", self.player_black)
+            board[7][n] = rook
+            player_black.peices << rook
+
+            n += 7
+        end
+
+        # add bishops
+
+
         # add kings
 
         # add queens
@@ -100,7 +117,7 @@ class Board
         player_turn(self.player_white)
         print_display(self.player_black)
         player_turn(self.player_black)
-        print_display(self.player_white)
+        gameloop()
     end
 
     def player_turn(player)    
@@ -134,16 +151,15 @@ class Board
         self.board[target_location[0]][target_location[1]] = peice_to_move
     end
 
-
     def move_peice_to()
         print "Column to move to: "
         column = gets.chomp.to_i
         print "Row to move to: "
-        row = gets.chomp.to_i    
+        row = gets.chomp.to_i  
         return [row, column], [row, column]
-    end
+    end  
     
-
+    # Choose peice, then populate peice's array_of_all_possible_moves.
     def choose_peice
         print "Column of peice to move: "
         column = gets.chomp.to_i
@@ -151,13 +167,21 @@ class Board
         row = gets.chomp.to_i    
         peice = self.board[row][column]
 
+        if peice == nil || peice == []
+        # function will call itself until a valid location is given
+        puts "Please choose a valid location."
+        choose_peice()
+        else
+        # populate peice's array with all possible moves
+        peice.possible_moves(peice.current_location)
+
         # remove peice from old location, and erase current location so it can be replaced with a new location
         peice.current_location = nil
         self.board[row][column] = []
-
+        puts
         return peice
+        end
     end
-
 
     def check_if_peice_is_present(player, peice_to_move)
         counter = 0
@@ -174,8 +198,8 @@ class Board
         return false
     end
 
-
     def legal_move?(row, column, player, peice)
+
         if peice.array_of_possible_moves.include? [row, column]
             if self.board[row][column] != []
                 # if the space is not empty but is part of the current player's peices,
@@ -201,7 +225,6 @@ class Board
             end
         end
     end
-
 end
 
 
@@ -217,7 +240,7 @@ class WhitePawn
     attr_reader :beginning_location, :ascii_display
 
     # locations are [row, column]
-    def initialize(location, display, location2, player)
+    def initialize(location, display, player)
         @owner = player
         # location at start of the game, used to determine if pawn can move two peices or not.
         @beginning_location = location
@@ -226,7 +249,7 @@ class WhitePawn
         # what is displayed on the board
         @ascii_display = display
         # an array of all possible moves the player can choose from
-        @array_of_possible_moves = possible_moves(location2)
+        @array_of_possible_moves = []
         # add a link back to parent element?
     end
 
@@ -246,7 +269,7 @@ class BlackPawn
     attr_reader :beginning_location, :ascii_display
 
     # locations are [row, column]
-    def initialize(location, display, location2, player)
+    def initialize(location, display, player)
         @owner = player
         # location at start of the game, used to determine if pawn can move two peices or not.
         @beginning_location = location
@@ -255,7 +278,7 @@ class BlackPawn
         # what is displayed on the board
         @ascii_display = display
         # an array of all possible moves the player can choose from
-        @array_of_possible_moves = possible_moves(location2)
+        @array_of_possible_moves = []
         # add a link back to parent element?
     end
 
@@ -276,7 +299,7 @@ class Knight
     attr_reader :beginning_location, :ascii_display
 
     # locations are [row, column]
-    def initialize(location, display, location2, player)
+    def initialize(location, display, player)
         @owner = player
         # location at start of the game, used to determine if pawn can move two peices or not.
         @beginning_location = location
@@ -285,7 +308,8 @@ class Knight
         # what is displayed on the board
         @ascii_display = display
         # an array of all possible moves the player can choose from
-        @array_of_possible_moves = possible_moves(location2)
+        @array_of_possible_moves = []
+        # possible_moves(location2)
         # add a link back to parent element?
     end
 
@@ -307,6 +331,46 @@ class Knight
     end
 end
 
+class Rook
+    attr_accessor :current_location, :array_of_possible_moves, :owner
+    attr_reader :beginning_location, :ascii_display
+
+    # locations are [row, column]
+    def initialize(location, display, player)
+        @owner = player
+        # location at start of the game, used to determine if pawn can move two peices or not.
+        @beginning_location = location
+        # location of the pawn currently
+        @current_location = location
+        # what is displayed on the board
+        @ascii_display = display
+        # an array of all possible moves the player can choose from
+        @array_of_possible_moves = []
+        # add a link back to parent element?
+    end
+
+    # remember moves are written row and then column
+    def possible_moves(location)
+        possible_moves = []
+
+        possible_move = location
+
+        # # iterate until == peice
+        # blocking_peice = nil
+        self.owner.peices.each do |peice|
+            
+        end
+        # location [0] <- changes, location[1]
+        # location[0] <- changes, location[1]
+        # location[0], location[1] <- changes
+        # location[0], location[1] <- changes        
+
+        self.array_of_possible_moves = possible_moves
+    end
+end
+
+
+
 
 # decide whether to do store possible moves ahead of time, or calculate before each move.
 # for pawns, have to have a seperate value. because they can only take diagonally
@@ -314,5 +378,5 @@ end
 # king can store a value such as "in_check"
 
 
-gameboard = Board.new
+gameboard = Game.new
 gameboard.gameloop
