@@ -450,6 +450,9 @@ class Bishop
             index += 1
             row += 1 
         end
+        if board[row][index] != nil 
+            possible_moves << [row, index]
+        end
 
         #  - -
         index = location[1] - 1
@@ -458,6 +461,9 @@ class Bishop
             possible_moves << [row, index]
             index -= 1
             row -= 1 
+        end
+        if board[row][index] != nil 
+            possible_moves << [row, index]
         end
 
         #  + -
@@ -468,6 +474,9 @@ class Bishop
             index += 1
             row -= 1
         end
+        if board[row][index] != nil 
+            possible_moves << [row, index]
+        end
 
         #  - +
         index = location[1] - 1
@@ -477,18 +486,19 @@ class Bishop
             index -= 1
             row += 1
         end
+        if board[row][index] != nil 
+            possible_moves << [row, index]
+        end
 
         
 
         # add all possible moves to the bishop class variable "array_of_possible_moves"
         self.array_of_possible_moves = possible_moves
-        puts self.array_of_possible_moves
     end
 end
 
-
 # for pawns, have to have a seperate value. because they can only take diagonally
-# rook,bishops,king,queen
+# queen, king
 # king can store a value such as "in_check"
 # add change peice input 
 # add rook horizontal/diagonal checks into seperate functions (right/left), same with bishop (diagonals), then add them to queen
