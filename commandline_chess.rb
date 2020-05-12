@@ -20,20 +20,21 @@ class Game
     def create_peices
         # target location 0 == row, target_location 1 == columns; it is backwards due to the board
 
+        # add pawns
         n = 0
         8.times do 
-            # change here to add black/white pawn
-            pawn = WhitePawn.new([1, n], "♙", self.player_white)
-            board[1][n] = pawn
-            player_white.peices << pawn
+            # pawn = WhitePawn.new([1, n], "♙", self.player_white)
+            # board[1][n] = pawn
+            # player_white.peices << pawn
 
-            pawn = BlackPawn.new([6, n], "♟", self.player_black)
-            board[6][n] = pawn
-            player_black.peices << pawn
+            # pawn = BlackPawn.new([6, n], "♟", self.player_black)
+            # board[6][n] = pawn
+            # player_black.peices << pawn
 
-            n+=1
+            # n+=1
         end
         
+        # add knights
         n = 1
         2.times do 
             knight = Knight.new([0, n],"♘", self.player_white)
@@ -47,6 +48,7 @@ class Game
             n += 5
         end
 
+        # add rooks
         n = 0
         2.times do
             rook = Rook.new([0, n], "♖", self.player_white)
@@ -60,21 +62,28 @@ class Game
             n += 7
         end
 
+        # add bishops
         n = 2
         2.times do
             bishop = Bishop.new([0,n], "♗", self.player_white)
             board[0][n] = bishop
             player_white.peices << bishop
 
-            bishop = Bishop.new([0,n], "♝", self.player_black)
+            bishop = Bishop.new([7,n], "♝", self.player_black)
             board[7][n] = bishop
             player_black.peices << bishop
 
             n+=3
         end
-        # add bishops
 
         # add queens
+        queen = Queen.new([0,4], "♕", self.player_white)
+        board[0][4] = queen
+        player_white.peices << queen
+
+        queen = Queen.new([7,4], "♛", self.player_black)
+        board[7][4] = queen
+        player_black.peices << queen
 
         # add kings
     end
@@ -160,7 +169,7 @@ class Game
         # update board to show changes
         self.board[target_location[0]][target_location[1]] = peice_to_move
     end
-
+    
     def move_peice_to()
         print "Column to move to: "
         column = gets.chomp.to_i
@@ -174,7 +183,8 @@ class Game
         print "Column of peice to move: "
         column = gets.chomp.to_i
         print "Row of peice to move: "
-        row = gets.chomp.to_i    
+        row = gets.chomp.to_i
+        
         peice = self.board[row][column]
 
         if peice == nil || peice == []
@@ -266,9 +276,19 @@ class WhitePawn
 
     def possible_moves(location)
         possible_moves = []
-        possible_move = location
-        possible_move[0] += 1
-        possible_moves << possible_move
+
+        # check if the pawn can move forward
+        if self.owner.game.board[location[0] + 1][location[1]] == []
+            possible_moves << [location[0] + 1, location[1]]
+        end
+
+        # check for if there are peices the pawn can take
+        if self.owner.game.board[location[0] + 1][location[1] + 1] != [] && self.owner.game.board[location[0] + 1][location[1] + 1] != nil
+            possible_moves << [location[0] + 1, location[1] + 1]
+        end
+        if self.owner.game.board[location[0] + 1][location[1] - 1] != [] && self.owner.game.board[location[0] + 1][location[1] - 1] != nil
+            possible_moves << [location[0] + 1, location[1] - 1]
+        end
 
         self.array_of_possible_moves = possible_moves
     end
@@ -296,10 +316,19 @@ class BlackPawn
     def possible_moves(location)
         possible_moves = []
 
-        possible_move = location
-        possible_move[0] -= 1
-        possible_moves << possible_move
+        # check if the pawn can move forward
+        if self.owner.game.board[location[0] - 1][location[1]] == []
+            possible_moves << [location[0] - 1, location[1]]
+        end
         
+        # check for if there are peices the pawn can take
+        if self.owner.game.board[location[0] - 1][location[1] - 1] != [] && self.owner.game.board[location[0] - 1][location[1] - 1] != nil
+            possible_moves << [location[0] - 1, location[1] - 1]
+        end
+        if self.owner.game.board[location[0] - 1][location[1] + 1] != [] && self.owner.game.board[location[0] - 1][location[1] + 1] != nil
+            possible_moves << [location[0] - 1, location[1] + 1]
+        end
+
         self.array_of_possible_moves = possible_moves
     end
 
@@ -307,14 +336,11 @@ end
 
 class Knight
     attr_accessor :current_location, :array_of_possible_moves, :owner
-    attr_reader :beginning_location, :ascii_display
+    attr_reader :ascii_display
 
     # locations are [row, column]
     def initialize(location, display, player)
         @owner = player
-        # location at start of the game, used to determine if pawn can move two peices or not.
-        @beginning_location = location
-        # location of the pawn currently
         @current_location = location
         # what is displayed on the board
         @ascii_display = display
@@ -344,14 +370,11 @@ end
 
 class Rook
     attr_accessor :current_location, :array_of_possible_moves, :owner
-    attr_reader :beginning_location, :ascii_display
+    attr_reader :ascii_display
 
     # locations are [row, column]
     def initialize(location, display, player)
         @owner = player
-        # location at start of the game, used to determine if pawn can move two peices or not.
-        @beginning_location = location
-        # location of the pawn currently
         @current_location = location
         # what is displayed on the board
         @ascii_display = display
@@ -371,7 +394,7 @@ class Rook
 
         # add possible right side moves
         # starting index == spot directly to the right of the peice
-        index = row.find_index(self) + 1
+        index = location[1] + 1
         index += 1 until row[index] != []
         max_right_side = index
         while max_right_side > location[1]
@@ -380,7 +403,7 @@ class Rook
         end
 
         # new index == spot directly to the left of the peice
-        index = row.find_index(self) - 1
+        index = location[1] - 1
         index -= 1 until row[index] != []
         max_left_side = index
         while location[1] > max_left_side
@@ -422,19 +445,15 @@ end
 
 class Bishop
     attr_accessor :current_location, :array_of_possible_moves, :owner
-    attr_reader :beginning_location, :ascii_display
+    attr_reader :ascii_display
 
     def initialize(location, display, player)
-        @owner = player
-        # location at start of the game, used to determine if pawn can move two peices or not.
-        @beginning_location = location
-        # location of the pawn currently
+        @owner = player       
         @current_location = location
         # what is displayed on the board
         @ascii_display = display
         # an array of all possible moves the player can choose from
         @array_of_possible_moves = []
-        # add a link back to parent element?
     end   
 
     def possible_moves(location)
@@ -454,6 +473,33 @@ class Bishop
             possible_moves << [row, index]
         end
 
+        # index = location[1] + 1
+        # row = location[0] + 1
+        # until board[row][index] != []
+        #     index += 1
+        #     row += 1
+        # end
+        # max_index = index
+        # max_row = row
+        # while max_index > location[1]
+        #     possible_moves << [max_row, max_index]
+        #     max_row -= 1
+        #     max_index -= 1
+        # end
+
+        #  - +
+        # if peice is not the top row, or in the bottom left position, do the following
+        index = location[1] - 1
+        row = location[0] + 1
+        until board[row][index] != []
+            possible_moves << [row, index]
+            index -= 1
+            row += 1
+        end
+        if board[row][index] != nil 
+            possible_moves << [row, index]
+        end
+        
         #  - -
         index = location[1] - 1
         row = location[0] -  1
@@ -478,31 +524,46 @@ class Bishop
             possible_moves << [row, index]
         end
 
-        #  - +
-        index = location[1] - 1
-        row = location[0] + 1
-        until board[row][index] != []
-            possible_moves << [row, index]
-            index -= 1
-            row += 1
-        end
-        if board[row][index] != nil 
-            possible_moves << [row, index]
-        end
-
-        
-
         # add all possible moves to the bishop class variable "array_of_possible_moves"
         self.array_of_possible_moves = possible_moves
+        print possible_moves
     end
 end
 
-# for pawns, have to have a seperate value. because they can only take diagonally
-# queen, king
-# king can store a value such as "in_check"
-# add change peice input 
-# add rook horizontal/diagonal checks into seperate functions (right/left), same with bishop (diagonals), then add them to queen
-# research private vs public functions in classes
+class Queen
+    attr_accessor :current_location, :array_of_possible_moves, :owner
+    attr_reader :ascii_display
+
+    def initialize(location, display, player)
+        @owner = player
+        @current_location = location
+        # what is displayed on the board
+        @ascii_display = display
+        # an array of all possible moves the player can choose from
+        @array_of_possible_moves = []
+        # add a link back to parent element?
+    end
+
+    def possible_moves(location)
+        possible_moves = []
+        possible_move = location
+
+        row = location[0]
+        index = location[1] + 1
+        index += 1 until row[index] != []
+        max_right_side = index
+        while max_right_side > location[1]
+            possible_moves << [location[0], max_right_side]
+            max_right_side -= 1
+        end
+
+
+
+
+    end
+end
+
+
 
 gameboard = Game.new
 gameboard.gameloop
