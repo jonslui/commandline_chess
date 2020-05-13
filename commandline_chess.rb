@@ -184,7 +184,7 @@ class Game
         column = gets.chomp.to_i
         print "Row of peice to move: "
         row = gets.chomp.to_i
-        
+
         peice = self.board[row][column]
 
         if peice == nil || peice == []
@@ -386,6 +386,7 @@ class Rook
     # remember moves are written row and then column
     def possible_moves(location)
         possible_moves = []
+        board = self.owner.game.board
 
         possible_move = location
         # n = 1
@@ -395,11 +396,10 @@ class Rook
         # add possible right side moves
         # starting index == spot directly to the right of the peice
         index = location[1] + 1
-        index += 1 until row[index] != []
-        max_right_side = index
-        while max_right_side > location[1]
-            possible_moves << [location[0], max_right_side]
-            max_right_side -= 1
+        index += 1 until board[location[0]][index] != []
+        while index > location[1]
+            possible_moves << [location[0], index]
+            index -= 1
         end
 
         # new index == spot directly to the left of the peice
@@ -412,9 +412,7 @@ class Rook
         end
 
         # new index == column of the current peice
-        board = self.owner.game.board
         index = location[1]
-
         # find highest vertical point the rook is able to move to
         # if the peice is already at 7, do not look for moves higher
         if location[0] != 7
@@ -458,72 +456,64 @@ class Bishop
 
     def possible_moves(location)
         possible_moves = []
-        possible_move = location
         board = self.owner.game.board
 
         #  + +
-        index = location[1] + 1
-        row = location[0] + 1
-        until board[row][index] != []
-            possible_moves << [row, index]
-            index += 1
-            row += 1 
-        end
-        if board[row][index] != nil 
-            possible_moves << [row, index]
+        if location[0] < 7 && location[1] < 7
+            index = location[1] + 1
+            row = location[0] + 1
+            while board[row][index] == [] && index < 7 && row < 7
+                possible_moves << [row, index]
+                index += 1
+                row += 1 
+            end
+            if row <= 7 || index <= 7
+                possible_moves << [row, index]
+            end
         end
 
-        # index = location[1] + 1
-        # row = location[0] + 1
-        # until board[row][index] != []
-        #     index += 1
-        #     row += 1
-        # end
-        # max_index = index
-        # max_row = row
-        # while max_index > location[1]
-        #     possible_moves << [max_row, max_index]
-        #     max_row -= 1
-        #     max_index -= 1
-        # end
-
-        #  - +
-        # if peice is not the top row, or in the bottom left position, do the following
-        index = location[1] - 1
-        row = location[0] + 1
-        until board[row][index] != []
-            possible_moves << [row, index]
-            index -= 1
-            row += 1
+        # #  - +
+        if location[0] > 0 && location[1] < 7
+            index = location[1] + 1
+            row = location[0] - 1
+            while board[row][index] == [] && index < 7 && row > 0
+                possible_moves << [row, index]
+                index += 1
+                row -= 1
+            end
+            if row >= 0 && index <= 7
+                possible_moves << [row, index]
+            end
         end
-        if board[row][index] != nil 
-            possible_moves << [row, index]
+
+        # #  - -
+        if location[0] > 0 && location[1] > 0
+            index = location[1] - 1
+            row = location[0] - 1
+            while board[row][index] == [] && index > 0 && row > 0
+                possible_moves << [row, index]
+                index -= 1
+                row -= 1
+            end
+            if row >= 0 || index >= 0
+                possible_moves << [row, index]
+            end
         end
         
-        #  - -
-        index = location[1] - 1
-        row = location[0] -  1
-        until board[row][index] != []
-            possible_moves << [row, index]
-            index -= 1
-            row -= 1 
+        # #  + -
+        if location[0] < 7 && location[1] > 0
+            index = location[1] - 1
+            row = location[0] + 1
+            while board[row][index] == [] && index > 0 && row < 7
+                possible_moves << [row, index]
+                index -= 1
+                row += 1
+            end
+            if row <= 7 || index >= 0
+                possible_moves << [row, index]
+            end
         end
-        if board[row][index] != nil 
-            possible_moves << [row, index]
-        end
-
-        #  + -
-        index = location[1] + 1
-        row = location[0] - 1
-        until board[row][index] != []
-            possible_moves << [row, index]
-            index += 1
-            row -= 1
-        end
-        if board[row][index] != nil 
-            possible_moves << [row, index]
-        end
-
+        
         # add all possible moves to the bishop class variable "array_of_possible_moves"
         self.array_of_possible_moves = possible_moves
         print possible_moves
@@ -546,23 +536,79 @@ class Queen
 
     def possible_moves(location)
         possible_moves = []
-        possible_move = location
-
-        row = location[0]
-        index = location[1] + 1
-        index += 1 until row[index] != []
-        max_right_side = index
-        while max_right_side > location[1]
-            possible_moves << [location[0], max_right_side]
-            max_right_side -= 1
+        board = self.owner.game.board
+        # DIAGONALS
+        # # + +
+        if location[0] < 7 && location[1] < 7
+            index = location[1] + 1
+            row = location[0] + 1
+            while board[row][index] == [] && index < 7 && row < 7
+                possible_moves << [row, index]
+                index += 1
+                row += 1 
+            end
+            if row <= 7 || index <= 7
+                possible_moves << [row, index]
+            end
         end
 
+        # #  - +
+        if location[0] > 0 && location[1] < 7
+            index = location[1] + 1
+            row = location[0] - 1
+            while board[row][index] == [] && index < 7 && row > 0
+                possible_moves << [row, index]
+                index += 1
+                row -= 1
+            end
+            if row >= 0 && index <= 7
+                possible_moves << [row, index]
+            end
+        end
+
+        # #  - -
+        if location[0] > 0 && location[1] > 0
+            index = location[1] - 1
+            row = location[0] - 1
+            while board[row][index] == [] && index > 0 && row > 0
+                possible_moves << [row, index]
+                index -= 1
+                row -= 1
+            end
+            if row >= 0 || index >= 0
+                possible_moves << [row, index]
+            end
+        end
+        
+        # #  + -
+        if location[0] < 7 && location[1] > 0
+            index = location[1] - 1
+            row = location[0] + 1
+            while board[row][index] == [] && index > 0 && row < 7
+                possible_moves << [row, index]
+                index -= 1
+                row += 1
+            end
+            if row <= 7 || index >= 0
+                possible_moves << [row, index]
+            end
+        end
+
+        ## HORIZONTALS / VERITCALS
 
 
 
+        self.array_of_possible_moves = possible_moves
+        print possible_moves
     end
 end
 
+# queen, king
+# king can store a value such as "in_check"
+
+# add change peice input
+    # option 1: if input == "c" -- recall self
+    # option 2: put both functions in a recusive loop that says until true, have then have c == return false
 
 
 gameboard = Game.new
