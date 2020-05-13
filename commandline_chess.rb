@@ -86,6 +86,13 @@ class Game
         player_black.peices << queen
 
         # add kings
+        king = King.new([0,3], "♔", self.player_white)
+        board[0][3] = king
+        player_white.peices << king
+
+        king = King.new([7,3], "♚", self.player_black)
+        board[7][3] = king
+        player_black.peices << king
     end
 
     def print_display(player)
@@ -178,7 +185,7 @@ class Game
         return [row, column]
     end  
     
-    # Choose peice, then populate peice's array_of_all_possible_moves.
+    # Choose peice, then populate peice's array_of_possible_moves.
     def choose_peice
         print "Column of peice to move: "
         column = gets.chomp.to_i
@@ -388,11 +395,6 @@ class Rook
         possible_moves = []
         board = self.owner.game.board
 
-        possible_move = location
-        # n = 1
-
-        row = self.owner.game.board[location[0]] 
-
         # add possible right side moves
         # starting index == spot directly to the right of the peice
         index = location[1] + 1
@@ -404,36 +406,30 @@ class Rook
 
         # new index == spot directly to the left of the peice
         index = location[1] - 1
-        index -= 1 until row[index] != []
-        max_left_side = index
-        while location[1] > max_left_side
-            possible_moves << [location[0], max_left_side]
-            max_left_side += 1
+        index -= 1 until board[location[0]][index] != []
+        while index < location[1]
+            possible_moves << [location[0], index]
+            index += 1
         end
 
         # new index == column of the current peice
-        index = location[1]
         # find highest vertical point the rook is able to move to
         # if the peice is already at 7, do not look for moves higher
         if location[0] != 7
             row = location[0] + 1
-
-            # increase row until [row][index] is not an empty space or row + 1 is not greater than 7
-            row += 1 until board[row][index] != [] || row + 1 > 7
-            max_vertical = row
-            while location[0] < max_vertical
-                possible_moves << [max_vertical, index]
-                max_vertical -= 1
+            row += 1 until board[row][location[1]] != [] || row + 1 > 7
+            while location[0] < row
+                possible_moves << [row, location[1]]
+                row -= 1
             end
         end
 
         # find lowest vertical point the rook is able to move to
         row = location[0] - 1
-        row -= 1 until board[row][index] != []
-        min_vertical = row
-        while location[0] > min_vertical
-            possible_moves << [min_vertical, index]
-            min_vertical += 1
+        row -= 1 until board[row][location[1]] != []
+        while location[0] > row
+            possible_moves << [row, location[1]]
+            row += 1
         end
         
         self.array_of_possible_moves = possible_moves
@@ -595,16 +591,88 @@ class Queen
         end
 
         ## HORIZONTALS / VERITCALS
+        # right
+        index = location[1] + 1
+        index += 1 until board[location[0]][index] != []
+        while index > location[1]
+            possible_moves << [location[0], index]
+            index -= 1
+        end
 
+        # left
+        index = location[1] - 1
+        index -= 1 until board[location[0]][index] != []
+        while index < location[1]
+            possible_moves << [location[0], index]
+            index += 1
+        end
 
+        # up
+        if location[0] != 7
+            row = location[0] + 1
+            row += 1 until board[row][location[1]] != [] || row + 1 > 7
+            while location[0] < row
+                possible_moves << [row, location[1]]
+                row -= 1
+            end
+        end
+
+        # down
+        row = location[0] - 1
+        row -= 1 until board[row][location[1]] != []
+        while location[0] > row
+            possible_moves << [row, location[1]]
+            row += 1
+        end
 
         self.array_of_possible_moves = possible_moves
         print possible_moves
     end
 end
 
-# queen, king
-# king can store a value such as "in_check"
+class King 
+    attr_accessor :current_location, :array_of_possible_moves, :owner
+    attr_reader :ascii_display
+
+    def initialize(location, display, player)
+        @owner = player
+        @current_location = location
+        # what is displayed on the board
+        @ascii_display = display
+        # an array of all possible moves the player can choose from
+        @array_of_possible_moves = []
+        # add a link back to parent element?
+        @check_status = in_check?()
+    end
+
+    def possible_moves(location)
+        possible_moves = []
+        # up
+        possible_moves << [location[0] + 1, location[1]] if location[0] != 7
+        # down
+        possible_moves << [location[0] - 1, location[1]] if location[0] != 0
+        # right
+        possible_moves << [location[0], location[1] + 1] if location[1] != 7
+        # left
+        possible_moves << [location[0], location[1] - 1] if location[1] != 0
+        # up right
+        possible_moves << [location[0] + 1, location[1] + 1] if location[0] < 7 && location[1] < 7
+        # down right
+        possible_moves << [location[0] - 1, location[1] + 1] if location[0] > 0 && location[1] < 7
+        # up left
+        possible_moves << [location[0] + 1, location[1] - 1] if location[0] < 7 && location[1] > 0
+        # down left
+        possible_moves << [location[0] - 1, location[1] - 1] if location[0] > 0 && location[1] > 0
+
+        print possible_moves
+        self.array_of_possible_moves = possible_moves
+    end
+
+    def in_check?
+
+        return false
+    end
+end
 
 # add change peice input
     # option 1: if input == "c" -- recall self
