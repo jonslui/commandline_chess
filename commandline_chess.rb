@@ -19,7 +19,6 @@ class Game
     # create peices, populate display, and add them to player_white/player_black's "peices" array
     def create_peices
         # target location 0 == row, target_location 1 == columns; it is backwards due to the board
-
         # add pawns
         n = 0
         8.times do 
@@ -89,10 +88,13 @@ class Game
         king = King.new([0,3], "♔", self.player_white)
         board[0][3] = king
         player_white.peices << king
+        player_white.king = king
+
 
         king = King.new([7,3], "♚", self.player_black)
         board[7][3] = king
         player_black.peices << king
+        player_black.king = king
     end
 
     def print_display(player)
@@ -141,8 +143,10 @@ class Game
 
     def gameloop
         print_display(self.player_white)
+        self.player_white.in_check?            
         player_turn(self.player_white)
         print_display(self.player_black)
+        self.player_black.in_check?
         player_turn(self.player_black)
         gameloop()
     end
@@ -160,7 +164,7 @@ class Game
 
         # check if the move is legal (aka, if the taget_location is empty or filled with opposing player's peice)
         target_location = move_peice_to()
-        
+    
         while legal_move?(target_location[0], target_location[1], player, peice_to_move) == false
             target_location = move_peice_to()
         end
@@ -177,11 +181,12 @@ class Game
         self.board[target_location[0]][target_location[1]] = peice_to_move
     end
     
-    def move_peice_to()
+    def move_peice_to
         print "Column to move to: "
         column = gets.chomp.to_i
         print "Row to move to: "
-        row = gets.chomp.to_i  
+        row = gets.chomp.to_i
+
         return [row, column]
     end  
     
@@ -196,17 +201,17 @@ class Game
 
         if peice == nil || peice == []
         # function will call itself until a valid location is given
-        puts "Please choose a valid location."
-        choose_peice()
+            puts "Please choose a valid location."
+            choose_peice()
         else
         # populate peice's array with all possible moves
-        peice.possible_moves(peice.current_location)
+            peice.possible_moves(peice.current_location)
 
-        # remove peice from old location, and erase current location so it can be replaced with a new location
-        peice.current_location = nil
-        self.board[row][column] = []
-        puts
-        return peice
+            # remove peice from old location, and erase current location so it can be replaced with a new location
+            peice.current_location = nil
+            self.board[row][column] = []
+            puts
+            return peice
         end
     end
 
@@ -255,12 +260,84 @@ class Game
 end
 
 class Player
-    attr_accessor :peices
+    attr_accessor :peices, :king, :in_check
     attr_reader :game
     def initialize(game)
         @game = game
         @peices = []
+        @king = nil
+        @in_check = false
+        @checkmate = false
     end
+
+    def in_check?
+        opponents_possible_moves = []
+        peices_causing_check = []
+
+        # set player variable to opposite player
+        if self == self.game.player_white
+            opposite_player = self.game.player_black
+        else
+            opposite_player = self.game.player_white
+        end
+
+        # create an array of all possible movements by opposite player
+        # in order to check if king is in check or not
+        opposite_player.peices.each do |peice|
+            peice.possible_moves(peice.current_location)
+            peice.array_of_possible_moves.each do |possible_move|
+                opponents_possible_moves << possible_move
+
+                if possible_move == king.current_location
+                    peices_causing_check << peice
+                end
+            end
+        end
+
+        # if in check, call the checkmate? function to see if it is gameover or not
+        if opponents_possible_moves.include?(king.current_location) == true
+            self.in_check = true
+            checkmate?(opponents_possible_moves, peices_causing_check)
+        else
+            self.in_check = false
+        end
+    end
+
+
+    def checkmate?(opponents_possible_moves, peices_causing_check)
+
+        # if king is able to move somewhere that is not included in all possible opponent moves, then it is not checkmate
+        self.king.possible_moves(self.king.current_location)
+        self.king.array_of_possible_moves.each do |move| 
+            if opponents_possible_moves.include?(move) == false
+                puts "CHECK"
+                return
+            end
+        end            
+
+        # if peice causing check can be taken, then it is not checkmate
+
+        # NEED TO ADD?
+        # if every peice that has a possible move that == opponent_peice takes that peice, and if the new updated array != checkmate?
+        self.peices.each do |peice|
+            peices_causing_check.each do |opponent_peice|
+                if peice.array_of_possible_moves.include?(opponent_peice.current_location)
+                    puts "CHECK"
+                    puts "can be taken"
+                    return
+                end
+            end
+        end
+
+        # if peice can block the peice causing check, it is not checkmate
+
+        # compare both peice's locations, then find connection and compare?
+        
+
+
+        puts "CHECKMATE"
+    end
+
 end
 
 class WhitePawn
@@ -299,7 +376,6 @@ class WhitePawn
 
         self.array_of_possible_moves = possible_moves
     end
-
 end
 
 class BlackPawn
@@ -512,7 +588,6 @@ class Bishop
         
         # add all possible moves to the bishop class variable "array_of_possible_moves"
         self.array_of_possible_moves = possible_moves
-        print possible_moves
     end
 end
 
@@ -626,7 +701,6 @@ class Queen
         end
 
         self.array_of_possible_moves = possible_moves
-        print possible_moves
     end
 end
 
@@ -642,41 +716,31 @@ class King
         # an array of all possible moves the player can choose from
         @array_of_possible_moves = []
         # add a link back to parent element?
-        @check_status = in_check?()
     end
 
     def possible_moves(location)
         possible_moves = []
         # up
-        possible_moves << [location[0] + 1, location[1]] if location[0] != 7
+        possible_moves << [location[0] + 1, location[1]] if location[0] != 7 && self.owner.game.board[location[0] + 1][location[1]] == []
         # down
-        possible_moves << [location[0] - 1, location[1]] if location[0] != 0
+        possible_moves << [location[0] - 1, location[1]] if location[0] != 0 && self.owner.game.board[location[0] - 1][location[1]] == []
         # right
-        possible_moves << [location[0], location[1] + 1] if location[1] != 7
+        possible_moves << [location[0], location[1] + 1] if location[1] != 7 && self.owner.game.board[location[0]][location[1] + 1] == []
         # left
-        possible_moves << [location[0], location[1] - 1] if location[1] != 0
+        possible_moves << [location[0], location[1] - 1] if location[1] != 0 && self.owner.game.board[location[0]][location[1] - 1] == []
         # up right
-        possible_moves << [location[0] + 1, location[1] + 1] if location[0] < 7 && location[1] < 7
+        possible_moves << [location[0] + 1, location[1] + 1] if location[0] < 7 && location[1] < 7 && self.owner.game.board[location[0] + 1][location[1] + 1] == []
         # down right
-        possible_moves << [location[0] - 1, location[1] + 1] if location[0] > 0 && location[1] < 7
+        possible_moves << [location[0] - 1, location[1] + 1] if location[0] > 0 && location[1] < 7 && self.owner.game.board[location[0] - 1][location[1] + 1] == []
         # up left
-        possible_moves << [location[0] + 1, location[1] - 1] if location[0] < 7 && location[1] > 0
+        possible_moves << [location[0] + 1, location[1] - 1] if location[0] < 7 && location[1] > 0 && self.owner.game.board[location[0] + 1][location[1] - 1] == []
         # down left
-        possible_moves << [location[0] - 1, location[1] - 1] if location[0] > 0 && location[1] > 0
+        possible_moves << [location[0] - 1, location[1] - 1] if location[0] > 0 && location[1] > 0 && self.owner.game.board[location[0] - 1][location[1] - 1] == []
 
-        print possible_moves
         self.array_of_possible_moves = possible_moves
-    end
-
-    def in_check?
-
-        return false
-    end
+        # print possible_moves
+    end    
 end
-
-# add change peice input
-    # option 1: if input == "c" -- recall self
-    # option 2: put both functions in a recusive loop that says until true, have then have c == return false
 
 
 gameboard = Game.new
