@@ -22,15 +22,15 @@ class Game
         # add pawns
         n = 0
         8.times do 
-            # pawn = WhitePawn.new([1, n], "♙", self.player_white)
-            # board[1][n] = pawn
-            # player_white.peices << pawn
+            pawn = WhitePawn.new([1, n], "♙", self.player_white)
+            board[1][n] = pawn
+            player_white.peices << pawn
 
-            # pawn = BlackPawn.new([6, n], "♟", self.player_black)
-            # board[6][n] = pawn
-            # player_black.peices << pawn
+            pawn = BlackPawn.new([6, n], "♟", self.player_black)
+            board[6][n] = pawn
+            player_black.peices << pawn
 
-            # n+=1
+            n+=1
         end
         
         # add knights
@@ -143,11 +143,18 @@ class Game
 
     def gameloop
         print_display(self.player_white)
-        self.player_white.in_check?            
+        self.player_white.in_check? 
+        # end game if player.checkmate == true
+        return if check_for_win(self.player_white) == true       
         player_turn(self.player_white)
+
         print_display(self.player_black)
         self.player_black.in_check?
+        # end game if player.checkmate == true
+        return if check_for_win(self.player_black) == true          
         player_turn(self.player_black)
+
+        # recall self until checkmate == true for a player
         gameloop()
     end
 
@@ -257,10 +264,14 @@ class Game
             end
         end
     end
+
+    def check_for_win(player)
+        return true if player.checkmate == true
+     end
 end
 
 class Player
-    attr_accessor :peices, :king, :in_check
+    attr_accessor :peices, :king, :in_check, :checkmate
     attr_reader :game
     def initialize(game)
         @game = game
@@ -330,12 +341,12 @@ class Player
         end
 
         # if peice can block the peice causing check, it is not checkmate
-
         # compare both peice's locations, then find connection and compare?
         
 
 
         puts "CHECKMATE"
+        self.checkmate == true
     end
 
 end
